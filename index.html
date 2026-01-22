@@ -3,376 +3,346 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scalping Master | Plataforma Educativa</title>
-    
-    <!-- Librerías: Tailwind (Estilo), Chart.js (Gráficos), FontAwesome (Iconos) -->
+    <title>Capital Assets | Investor Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    <style>
-        body { background-color: #0b0e11; color: #eaecef; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        .text-green { color: #0ecb81; }
-        .text-red { color: #f6465d; }
-        .bg-dark-2 { background-color: #1e2329; }
-        .border-dark { border-color: #2b3139; }
-        
-        /* Animación de pulso para cambios de precio */
-        .price-up { animation: flashGreen 0.5s; }
-        .price-down { animation: flashRed 0.5s; }
-
-        @keyframes flashGreen { 0% { background-color: rgba(14, 203, 129, 0.2); } 100% { background-color: transparent; } }
-        @keyframes flashRed { 0% { background-color: rgba(246, 70, 93, 0.2); } 100% { background-color: transparent; } }
-
-        /* Panel de Control Oculto */
-        #god-mode-panel {
-            transition: transform 0.3s ease-in-out;
-            transform: translateY(100%);
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Manrope', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            primary: '#2563eb', // Royal Blue
+                            accent: '#0ea5e9',
+                            success: '#10b981',
+                            bg: '#f8fafc'
+                        }
+                    }
+                }
+            }
         }
-        #god-mode-panel.active { transform: translateY(0); }
+    </script>
+    <style>
+        body { background-color: #f1f5f9; }
+        .glass-panel { background: white; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .sidebar-link.active { background-color: #eff6ff; color: #2563eb; border-right: 3px solid #2563eb; }
+        .asset-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="text-slate-800 h-screen flex overflow-hidden">
 
-    <!-- NAV -->
-    <nav class="h-14 bg-dark-2 border-b border-dark flex items-center justify-between px-4">
-        <div class="flex items-center gap-4">
-            <div class="text-xl font-bold text-yellow-500"><i class="fa-brands fa-bitcoin"></i> SCALPING <span class="text-white">PRO</span></div>
-            <div class="hidden md:flex gap-4 text-sm font-medium text-gray-400">
-                <a href="#" class="text-white hover:text-yellow-500">Mercados</a>
-                <a href="#" class="hover:text-yellow-500">Trade</a>
-                <a href="#" class="hover:text-yellow-500">Futuros</a>
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-white border-r border-slate-200 flex flex-col z-20">
+        <div class="h-20 flex items-center px-8 border-b border-slate-100">
+            <div class="w-8 h-8 bg-brand-primary rounded-lg flex items-center justify-center text-white font-bold text-xl mr-3">A</div>
+            <span class="font-bold text-lg tracking-tight text-slate-800">AIRCLIFT <span class="text-slate-400 font-normal">CAPITAL</span></span>
+        </div>
+
+        <nav class="flex-1 py-6 px-3 space-y-1">
+            <a href="#" onclick="showSection('dashboard')" id="nav-dashboard" class="sidebar-link active flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-lg hover:bg-slate-50 transition">
+                <i class="ph ph-squares-four text-xl"></i> Dashboard
+            </a>
+            <a href="#" onclick="showSection('marketplace')" id="nav-marketplace" class="sidebar-link flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-lg hover:bg-slate-50 transition">
+                <i class="ph ph-storefront text-xl"></i> Oportunidades
+            </a>
+            <a href="#" class="sidebar-link flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-lg hover:bg-slate-50 transition">
+                <i class="ph ph-chart-pie-slice text-xl"></i> Mi Portafolio
+            </a>
+            <a href="#" class="sidebar-link flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-600 rounded-lg hover:bg-slate-50 transition">
+                <i class="ph ph-wallet text-xl"></i> Billetera
+            </a>
+        </nav>
+
+        <div class="p-4 border-t border-slate-100">
+            <div class="bg-slate-900 rounded-xl p-4 text-white">
+                <p class="text-xs text-slate-400 mb-1">Total Equity</p>
+                <p class="font-bold text-lg">$1,240,500.00</p>
+                <div class="mt-3 flex gap-2">
+                    <button class="flex-1 bg-brand-primary hover:bg-blue-600 py-1.5 rounded text-xs font-semibold transition">Deposit</button>
+                </div>
             </div>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="text-sm">
-                <span class="text-gray-400">Balance:</span>
-                <span class="font-mono font-bold text-white" id="wallet-balance">$10,000.00</span> <span class="text-gray-500">USDT</span>
-            </div>
-            <button onclick="toggleGodMode()" class="text-gray-600 hover:text-white" title="Panel del Maestro"><i class="fa-solid fa-gear"></i></button>
-        </div>
-    </nav>
+    </aside>
 
     <!-- MAIN CONTENT -->
-    <div class="flex-1 flex overflow-hidden">
-        
-        <!-- LEFT: MARKET PAIRS (2 Activos) -->
-        <div class="w-1/4 border-r border-dark flex flex-col">
-            <!-- ASSET 1 -->
-            <div class="flex-1 p-4 border-b border-dark flex flex-col relative" id="asset-1-container">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-lg font-bold flex items-center gap-2"><img src="https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=025" class="w-6 h-6"> BTC/USDT</h2>
-                    <span class="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300">5x</span>
-                </div>
-                <div class="text-3xl font-mono font-bold text-green mb-1" id="price-btc">45,230.50</div>
-                <div class="text-xs text-gray-400 mb-4">Vol: 2.4B USDT</div>
-                
-                <!-- Chart Placeholder 1 -->
-                <div class="flex-1 bg-black/20 rounded relative overflow-hidden">
-                    <canvas id="chart-btc"></canvas>
-                </div>
-
-                <!-- Controls Asset 1 -->
-                <div class="mt-4 grid grid-cols-2 gap-2">
-                    <button onclick="openPosition('BTC', 'long')" class="bg-green-600 hover:bg-green-500 text-white py-2 rounded font-bold text-sm">BUY / LONG</button>
-                    <button onclick="openPosition('BTC', 'short')" class="bg-red-600 hover:bg-red-500 text-white py-2 rounded font-bold text-sm">SELL / SHORT</button>
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <!-- Header -->
+        <header class="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+            <h2 class="text-xl font-bold text-slate-800" id="page-title">Dashboard General</h2>
+            <div class="flex items-center gap-4">
+                <button class="p-2 text-slate-400 hover:text-slate-600"><i class="ph ph-bell text-xl"></i></button>
+                <div class="h-8 w-px bg-slate-200"></div>
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <p class="text-sm font-bold text-slate-800">Apollo Invictus</p>
+                        <p class="text-xs text-slate-500">Premium Investor</p>
+                    </div>
+                    <div class="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden">
+                        <img src="https://ui-avatars.com/api/?name=Apollo+Invictus&background=0D8ABC&color=fff" alt="User">
+                    </div>
                 </div>
             </div>
+        </header>
 
-            <!-- ASSET 2 -->
-            <div class="flex-1 p-4 flex flex-col relative" id="asset-2-container">
-                <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-lg font-bold flex items-center gap-2"><img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=025" class="w-6 h-6"> ETH/USDT</h2>
-                    <span class="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300">5x</span>
-                </div>
-                <div class="text-3xl font-mono font-bold text-red mb-1" id="price-eth">2,450.80</div>
-                <div class="text-xs text-gray-400 mb-4">Vol: 1.1B USDT</div>
-
-                <!-- Chart Placeholder 2 -->
-                <div class="flex-1 bg-black/20 rounded relative overflow-hidden">
-                    <canvas id="chart-eth"></canvas>
-                </div>
-
-                <!-- Controls Asset 2 -->
-                <div class="mt-4 grid grid-cols-2 gap-2">
-                    <button onclick="openPosition('ETH', 'long')" class="bg-green-600 hover:bg-green-500 text-white py-2 rounded font-bold text-sm">BUY / LONG</button>
-                    <button onclick="openPosition('ETH', 'short')" class="bg-red-600 hover:bg-red-500 text-white py-2 rounded font-bold text-sm">SELL / SHORT</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- RIGHT: POSITIONS & HISTORY -->
-        <div class="flex-1 flex flex-col bg-black">
-            <!-- Header -->
-            <div class="h-10 border-b border-dark flex items-center px-4 gap-6 text-sm font-medium bg-dark-2">
-                <button class="text-yellow-500 border-b-2 border-yellow-500 h-full">Posiciones Abiertas</button>
-                <button class="text-gray-400 hover:text-white">Historial de Órdenes</button>
-                <button class="text-gray-400 hover:text-white">Historial de Trades</button>
-            </div>
-
-            <!-- Table Header -->
-            <div class="grid grid-cols-7 text-xs text-gray-500 p-3 border-b border-dark bg-dark-2">
-                <div>Símbolo</div>
-                <div>Tipo</div>
-                <div>Tamaño</div>
-                <div>Precio Entrada</div>
-                <div>Precio Actual</div>
-                <div>PnL (USDT)</div>
-                <div class="text-right">Acción</div>
-            </div>
-
-            <!-- Positions List (Dynamic) -->
-            <div id="positions-list" class="flex-1 overflow-y-auto">
-                <!-- Las posiciones se inyectarán aquí con JS -->
-                <div class="p-8 text-center text-gray-600 text-sm">No hay posiciones abiertas.</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- GOD MODE PANEL (HIDDEN) -->
-    <div id="god-mode-panel" class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t-4 border-yellow-600 p-6 z-50 shadow-2xl">
-        <div class="max-w-6xl mx-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-bold text-white flex items-center gap-2"><i class="fa-solid fa-user-secret"></i> PANEL DE CONTROL DEL MAESTRO (MANIPULACIÓN)</h3>
-                <button onclick="toggleGodMode()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark fa-xl"></i></button>
-            </div>
+        <!-- Content Scrollable -->
+        <div class="flex-1 overflow-y-auto p-8">
             
-            <div class="grid grid-cols-2 gap-8">
-                <!-- Control BTC -->
-                <div class="bg-gray-900 p-4 rounded border border-gray-700">
-                    <h4 class="font-bold text-yellow-500 mb-2">Manipular BTC</h4>
-                    <div class="flex gap-2 items-center mb-2">
-                        <label class="text-sm text-gray-400 w-24">Precio:</label>
-                        <input type="number" id="input-btc-price" class="bg-gray-800 text-white border border-gray-600 px-2 py-1 rounded w-full" value="45230.50">
-                        <button onclick="updatePrice('BTC')" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500">Set</button>
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="space-y-8">
+                <!-- Stats Row -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Retorno Total (YTD)</p>
+                                <h3 class="text-3xl font-bold text-slate-800 mt-1">+$124,500</h3>
+                            </div>
+                            <span class="bg-green-100 text-green-700 px-2 py-1 rounded-lg text-xs font-bold">+12.5%</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-1.5">
+                            <div class="bg-green-500 h-1.5 rounded-full" style="width: 75%"></div>
+                        </div>
                     </div>
-                    <div class="flex gap-2 items-center">
-                        <label class="text-sm text-gray-400 w-24">Tendencia:</label>
-                        <button onclick="startTrend('BTC', 1)" class="bg-green-600/50 text-green-200 px-3 py-1 rounded hover:bg-green-600 text-xs">Subir Auto</button>
-                        <button onclick="startTrend('BTC', -1)" class="bg-red-600/50 text-red-200 px-3 py-1 rounded hover:bg-red-600 text-xs">Bajar Auto</button>
-                        <button onclick="stopTrend('BTC')" class="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-500 text-xs">Pausar</button>
+                    
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Activos Activos</p>
+                                <h3 class="text-3xl font-bold text-slate-800 mt-1">4</h3>
+                            </div>
+                            <div class="p-2 bg-blue-50 rounded-lg text-brand-primary"><i class="ph ph-stack text-xl"></i></div>
+                        </div>
+                        <p class="text-xs text-slate-400">Próximo dividendo: 15 Ene</p>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <p class="text-sm text-slate-500 font-medium">Liquidez Disponible</p>
+                                <h3 class="text-3xl font-bold text-slate-800 mt-1">$45,000</h3>
+                            </div>
+                            <div class="p-2 bg-purple-50 rounded-lg text-purple-600"><i class="ph ph-wallet text-xl"></i></div>
+                        </div>
+                        <button onclick="showSection('marketplace')" class="text-xs font-bold text-brand-primary hover:underline">Invertir ahora &rarr;</button>
                     </div>
                 </div>
 
-                <!-- Control ETH -->
-                <div class="bg-gray-900 p-4 rounded border border-gray-700">
-                    <h4 class="font-bold text-blue-400 mb-2">Manipular ETH</h4>
-                    <div class="flex gap-2 items-center mb-2">
-                        <label class="text-sm text-gray-400 w-24">Precio:</label>
-                        <input type="number" id="input-eth-price" class="bg-gray-800 text-white border border-gray-600 px-2 py-1 rounded w-full" value="2450.80">
-                        <button onclick="updatePrice('ETH')" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500">Set</button>
+                <!-- Chart Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 glass-panel p-6 rounded-2xl">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-lg text-slate-800">Rendimiento del Portafolio</h3>
+                            <select class="bg-slate-50 border border-slate-200 text-xs rounded-lg px-3 py-1.5 outline-none">
+                                <option>Últimos 6 meses</option>
+                                <option>Este Año</option>
+                            </select>
+                        </div>
+                        <div class="h-64">
+                            <canvas id="portfolioChart"></canvas>
+                        </div>
                     </div>
-                    <div class="flex gap-2 items-center">
-                        <label class="text-sm text-gray-400 w-24">Tendencia:</label>
-                        <button onclick="startTrend('ETH', 1)" class="bg-green-600/50 text-green-200 px-3 py-1 rounded hover:bg-green-600 text-xs">Subir Auto</button>
-                        <button onclick="startTrend('ETH', -1)" class="bg-red-600/50 text-red-200 px-3 py-1 rounded hover:bg-red-600 text-xs">Bajar Auto</button>
-                        <button onclick="stopTrend('ETH')" class="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-500 text-xs">Pausar</button>
+
+                    <div class="glass-panel p-6 rounded-2xl">
+                        <h3 class="font-bold text-lg text-slate-800 mb-4">Distribución</h3>
+                        <div class="h-48 relative">
+                            <canvas id="allocationChart"></canvas>
+                        </div>
+                        <div class="mt-4 space-y-3">
+                            <div class="flex justify-between text-sm">
+                                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-blue-500"></span> Real Estate</span>
+                                <span class="font-bold">45%</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-purple-500"></span> Crypto Fund</span>
+                                <span class="font-bold">30%</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> Tech Startups</span>
+                                <span class="font-bold">25%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- LOGIC SCRIPT -->
+            <!-- MARKETPLACE VIEW (HIDDEN INITIALLY) -->
+            <div id="view-marketplace" class="hidden space-y-6">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Oportunidades de Inversión</h2>
+                        <p class="text-slate-500 text-sm mt-1">Activos verificados disponibles para compra inmediata.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button class="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">Filtros</button>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Asset 1 -->
+                    <div class="asset-card glass-panel rounded-2xl overflow-hidden transition-all duration-300 group">
+                        <div class="h-40 bg-slate-200 relative">
+                            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">Real Estate</div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-slate-900">Skyline Tower Fund</h3>
+                                <span class="text-green-600 font-bold text-sm bg-green-50 px-2 py-1 rounded">12% APY</span>
+                            </div>
+                            <p class="text-sm text-slate-500 mb-4 line-clamp-2">Participación fraccionada en desarrollo comercial clase A en Miami. Pagos trimestrales.</p>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-6 border-t border-slate-100 pt-4">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Min. Inversión</p>
+                                    <p class="font-semibold text-slate-800">$5,000</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Riesgo</p>
+                                    <p class="font-semibold text-slate-800">Bajo</p>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full py-3 bg-slate-900 hover:bg-blue-600 text-white font-bold rounded-xl transition duration-300">Invertir Ahora</button>
+                        </div>
+                    </div>
+
+                    <!-- Asset 2 -->
+                    <div class="asset-card glass-panel rounded-2xl overflow-hidden transition-all duration-300 group">
+                        <div class="h-40 bg-slate-200 relative">
+                            <img src="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">Crypto</div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-slate-900">Bitcoin Alpha Yield</h3>
+                                <span class="text-green-600 font-bold text-sm bg-green-50 px-2 py-1 rounded">25% APY</span>
+                            </div>
+                            <p class="text-sm text-slate-500 mb-4 line-clamp-2">Estrategia de arbitraje automatizado sobre BTC y ETH. Alta liquidez.</p>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-6 border-t border-slate-100 pt-4">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Min. Inversión</p>
+                                    <p class="font-semibold text-slate-800">$1,000</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Riesgo</p>
+                                    <p class="font-semibold text-orange-500">Medio</p>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full py-3 bg-slate-900 hover:bg-blue-600 text-white font-bold rounded-xl transition duration-300">Invertir Ahora</button>
+                        </div>
+                    </div>
+
+                    <!-- Asset 3 -->
+                    <div class="asset-card glass-panel rounded-2xl overflow-hidden transition-all duration-300 group">
+                        <div class="h-40 bg-slate-200 relative">
+                            <img src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">Venture</div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-lg text-slate-900">SpaceX Pre-IPO</h3>
+                                <span class="text-blue-600 font-bold text-sm bg-blue-50 px-2 py-1 rounded">Equity</span>
+                            </div>
+                            <p class="text-sm text-slate-500 mb-4 line-clamp-2">Acceso exclusivo a acciones privadas de sector aeroespacial antes de salida a bolsa.</p>
+                            
+                            <div class="grid grid-cols-2 gap-4 mb-6 border-t border-slate-100 pt-4">
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Min. Inversión</p>
+                                    <p class="font-semibold text-slate-800">$10,000</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 uppercase tracking-wider">Riesgo</p>
+                                    <p class="font-semibold text-red-500">Alto</p>
+                                </div>
+                            </div>
+                            
+                            <button class="w-full py-3 bg-slate-900 hover:bg-blue-600 text-white font-bold rounded-xl transition duration-300">Invertir Ahora</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
     <script>
-        // --- ESTADO DEL SISTEMA ---
-        let balance = 10000.00;
-        const assets = {
-            'BTC': { price: 45230.50, trend: 0, chart: null, data: [] },
-            'ETH': { price: 2450.80, trend: 0, chart: null, data: [] }
-        };
-        let positions = [];
-        let positionIdCounter = 1;
-
-        // --- INICIALIZACIÓN DE GRÁFICOS (CHART.JS) ---
-        function initCharts() {
-            const ctxBTC = document.getElementById('chart-btc').getContext('2d');
-            assets['BTC'].chart = createChart(ctxBTC, '#0ecb81');
-
-            const ctxETH = document.getElementById('chart-eth').getContext('2d');
-            assets['ETH'].chart = createChart(ctxETH, '#f6465d');
-
-            // Llenar con datos iniciales ficticios
-            for(let i=0; i<50; i++) {
-                updateChartData('BTC', assets['BTC'].price + (Math.random() - 0.5) * 50, false);
-                updateChartData('ETH', assets['ETH'].price + (Math.random() - 0.5) * 5, false);
+        // NAVIGATION LOGIC
+        function showSection(sectionId) {
+            // Hide all sections
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-marketplace').classList.add('hidden');
+            
+            // Deactivate tabs
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active', 'bg-blue-50', 'text-blue-600', 'border-r-4', 'border-blue-600'));
+            
+            // Show target
+            document.getElementById('view-' + sectionId).classList.remove('hidden');
+            
+            // Activate tab
+            const activeTab = document.getElementById('nav-' + sectionId);
+            if(activeTab) {
+                activeTab.classList.add('active');
             }
+
+            // Update Title
+            const titles = { 'dashboard': 'Dashboard General', 'marketplace': 'Marketplace de Inversión' };
+            document.getElementById('page-title').innerText = titles[sectionId];
         }
 
-        function createChart(ctx, color) {
-            return new Chart(ctx, {
-                type: 'line',
-                data: { labels: Array(50).fill(''), datasets: [{ data: [], borderColor: color, borderWidth: 2, pointRadius: 0, fill: false, tension: 0.1 }] },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { display: false }, y: { display: false } },
-                    animation: { duration: 0 }
+        // CHARTS CONFIGURATION
+        const ctxPortfolio = document.getElementById('portfolioChart').getContext('2d');
+        new Chart(ctxPortfolio, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'Crecimiento de Capital',
+                    data: [1000000, 1050000, 1080000, 1120000, 1180000, 1240500],
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { display: true, borderDash: [5, 5] } },
+                    x: { grid: { display: false } }
                 }
-            });
-        }
-
-        function updateChartData(asset, price, updateUI = true) {
-            const chart = assets[asset].chart;
-            const data = chart.data.datasets[0].data;
-            data.push(price);
-            if(data.length > 50) data.shift(); // Mantener ventana móvil
-            
-            // Color dinámico según tendencia inmediata
-            const prevPrice = data[data.length - 2] || price;
-            const color = price >= prevPrice ? '#0ecb81' : '#f6465d';
-            chart.data.datasets[0].borderColor = color;
-            
-            if(updateUI) chart.update();
-        }
-
-        // --- BUCLE DE SIMULACIÓN DE PRECIOS ---
-        setInterval(() => {
-            ['BTC', 'ETH'].forEach(asset => {
-                // Si hay tendencia forzada (God Mode), usarla. Si no, ruido aleatorio pequeño.
-                let change = (Math.random() - 0.5) * (assets[asset].price * 0.0005); // Volatilidad normal
-                
-                if (assets[asset].trend !== 0) {
-                    change = assets[asset].trend * (assets[asset].price * 0.001); // Volatilidad direccional fuerte
-                }
-
-                const newPrice = assets[asset].price + change;
-                setPrice(asset, newPrice);
-            });
-            updatePnL(); // Actualizar ganancias de posiciones en tiempo real
-        }, 1000); // Actualizar cada segundo
-
-        function setPrice(asset, price) {
-            const oldPrice = assets[asset].price;
-            assets[asset].price = price;
-            
-            // UI Update
-            const el = document.getElementById(`price-${asset.toLowerCase()}`);
-            el.innerText = price.toFixed(2);
-            el.className = `text-3xl font-mono font-bold mb-1 ${price >= oldPrice ? 'text-green price-up' : 'text-red price-down'}`;
-            
-            // Actualizar inputs del God Mode
-            const input = document.getElementById(`input-${asset.toLowerCase()}-price`);
-            if(document.activeElement !== input) input.value = price.toFixed(2);
-
-            // Chart Update
-            updateChartData(asset, price);
-        }
-
-        // --- LÓGICA DE TRADING ---
-        function openPosition(asset, type) {
-            const price = assets[asset].price;
-            const size = 1; // Simplificado: 1 unidad por trade (se puede mejorar)
-            
-            // Validar fondos (Simplificado para demo)
-            // if (balance < price * size) return alert("Fondos insuficientes");
-
-            const pos = {
-                id: positionIdCounter++,
-                asset: asset,
-                type: type, // 'long' or 'short'
-                entryPrice: price,
-                size: size,
-                timestamp: new Date()
-            };
-            positions.push(pos);
-            renderPositions();
-        }
-
-        function closePosition(id) {
-            const index = positions.findIndex(p => p.id === id);
-            if (index === -1) return;
-            
-            const pos = positions[index];
-            const currentPrice = assets[pos.asset].price;
-            const pnl = calculatePnL(pos, currentPrice);
-            
-            balance += pnl;
-            document.getElementById('wallet-balance').innerText = balance.toLocaleString('en-US', {minimumFractionDigits: 2});
-            
-            positions.splice(index, 1);
-            renderPositions();
-        }
-
-        function calculatePnL(pos, currentPrice) {
-            if (pos.type === 'long') {
-                return (currentPrice - pos.entryPrice) * pos.size;
-            } else {
-                return (pos.entryPrice - currentPrice) * pos.size;
             }
-        }
+        });
 
-        function updatePnL() {
-            positions.forEach(pos => {
-                const currentPrice = assets[pos.asset].price;
-                const pnl = calculatePnL(pos, currentPrice);
-                const el = document.getElementById(`pnl-${pos.id}`);
-                if (el) {
-                    el.innerText = pnl.toFixed(2);
-                    el.className = pnl >= 0 ? 'text-green font-bold' : 'text-red font-bold';
-                }
-            });
-        }
-
-        function renderPositions() {
-            const container = document.getElementById('positions-list');
-            if (positions.length === 0) {
-                container.innerHTML = '<div class="p-8 text-center text-gray-600 text-sm">No hay posiciones abiertas.</div>';
-                return;
+        const ctxAlloc = document.getElementById('allocationChart').getContext('2d');
+        new Chart(ctxAlloc, {
+            type: 'doughnut',
+            data: {
+                labels: ['Real Estate', 'Crypto', 'Tech'],
+                datasets: [{
+                    data: [45, 30, 25],
+                    backgroundColor: ['#3b82f6', '#a855f7', '#10b981'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                cutout: '75%'
             }
-
-            let html = '';
-            positions.forEach(pos => {
-                const currentPrice = assets[pos.asset].price;
-                const pnl = calculatePnL(pos, currentPrice);
-                const typeClass = pos.type === 'long' ? 'text-green' : 'text-red';
-                const pnlClass = pnl >= 0 ? 'text-green' : 'text-red';
-
-                html += `
-                    <div class="grid grid-cols-7 text-sm p-3 border-b border-dark hover:bg-dark-2 items-center font-mono">
-                        <div class="font-bold flex items-center gap-2">
-                            <span class="${pos.asset === 'BTC' ? 'text-yellow-500' : 'text-blue-400'}">●</span> ${pos.asset}USDT
-                        </div>
-                        <div class="${typeClass} uppercase font-bold">${pos.type}</div>
-                        <div>${pos.size}</div>
-                        <div>${pos.entryPrice.toFixed(2)}</div>
-                        <div id="price-live-${pos.id}">${currentPrice.toFixed(2)}</div>
-                        <div id="pnl-${pos.id}" class="${pnlClass} font-bold">${pnl.toFixed(2)}</div>
-                        <div class="text-right">
-                            <button onclick="closePosition(${pos.id})" class="text-xs bg-dark-2 border border-gray-600 hover:bg-gray-700 px-2 py-1 rounded text-white transition">Cerrar</button>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-        // --- GOD MODE (MANIPULACIÓN) ---
-        function toggleGodMode() {
-            document.getElementById('god-mode-panel').classList.toggle('active');
-        }
-
-        function updatePrice(asset) {
-            const input = document.getElementById(`input-${asset.toLowerCase()}-price`);
-            const newPrice = parseFloat(input.value);
-            if (!isNaN(newPrice)) {
-                setPrice(asset, newPrice);
-                // Detener tendencias automáticas si se fija manual
-                stopTrend(asset); 
-            }
-        }
-
-        function startTrend(asset, direction) {
-            // direction: 1 (Subir), -1 (Bajar)
-            assets[asset].trend = direction;
-        }
-
-        function stopTrend(asset) {
-            assets[asset].trend = 0;
-        }
-
-        // Iniciar
-        initCharts();
+        });
     </script>
 </body>
 </html>
