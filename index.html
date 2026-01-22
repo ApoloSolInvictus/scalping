@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scalping Master | Plataforma Educativa</title>
+    
+    <!-- Librerías: Tailwind (Estilo), Chart.js (Gráficos), FontAwesome (Iconos) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body { background-color: #0b0e11; color: #eaecef; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+        .text-green { color: #0ecb81; }
+        .text-red { color: #f6465d; }
+        .bg-dark-2 { background-color: #1e2329; }
+        .border-dark { border-color: #2b3139; }
+        
+        /* Animación de pulso para cambios de precio */
+        .price-up { animation: flashGreen 0.5s; }
+        .price-down { animation: flashRed 0.5s; }
+
+        @keyframes flashGreen { 0% { background-color: rgba(14, 203, 129, 0.2); } 100% { background-color: transparent; } }
+        @keyframes flashRed { 0% { background-color: rgba(246, 70, 93, 0.2); } 100% { background-color: transparent; } }
+
+        /* Panel de Control Oculto */
+        #god-mode-panel {
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(100%);
+        }
+        #god-mode-panel.active { transform: translateY(0); }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- NAV -->
+    <nav class="h-14 bg-dark-2 border-b border-dark flex items-center justify-between px-4">
+        <div class="flex items-center gap-4">
+            <div class="text-xl font-bold text-yellow-500"><i class="fa-brands fa-bitcoin"></i> SCALPING <span class="text-white">PRO</span></div>
+            <div class="hidden md:flex gap-4 text-sm font-medium text-gray-400">
+                <a href="#" class="text-white hover:text-yellow-500">Mercados</a>
+                <a href="#" class="hover:text-yellow-500">Trade</a>
+                <a href="#" class="hover:text-yellow-500">Futuros</a>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="text-sm">
+                <span class="text-gray-400">Balance:</span>
+                <span class="font-mono font-bold text-white" id="wallet-balance">$10,000.00</span> <span class="text-gray-500">USDT</span>
+            </div>
+            <button onclick="toggleGodMode()" class="text-gray-600 hover:text-white" title="Panel del Maestro"><i class="fa-solid fa-gear"></i></button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex overflow-hidden">
+        
+        <!-- LEFT: MARKET PAIRS (2 Activos) -->
+        <div class="w-1/4 border-r border-dark flex flex-col">
+            <!-- ASSET 1 -->
+            <div class="flex-1 p-4 border-b border-dark flex flex-col relative" id="asset-1-container">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-bold flex items-center gap-2"><img src="https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=025" class="w-6 h-6"> BTC/USDT</h2>
+                    <span class="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300">5x</span>
+                </div>
+                <div class="text-3xl font-mono font-bold text-green mb-1" id="price-btc">45,230.50</div>
+                <div class="text-xs text-gray-400 mb-4">Vol: 2.4B USDT</div>
+                
+                <!-- Chart Placeholder 1 -->
+                <div class="flex-1 bg-black/20 rounded relative overflow-hidden">
+                    <canvas id="chart-btc"></canvas>
+                </div>
+
+                <!-- Controls Asset 1 -->
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button onclick="openPosition('BTC', 'long')" class="bg-green-600 hover:bg-green-500 text-white py-2 rounded font-bold text-sm">BUY / LONG</button>
+                    <button onclick="openPosition('BTC', 'short')" class="bg-red-600 hover:bg-red-500 text-white py-2 rounded font-bold text-sm">SELL / SHORT</button>
+                </div>
+            </div>
+
+            <!-- ASSET 2 -->
+            <div class="flex-1 p-4 flex flex-col relative" id="asset-2-container">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-bold flex items-center gap-2"><img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=025" class="w-6 h-6"> ETH/USDT</h2>
+                    <span class="text-xs bg-gray-700 px-2 py-0.5 rounded text-gray-300">5x</span>
+                </div>
+                <div class="text-3xl font-mono font-bold text-red mb-1" id="price-eth">2,450.80</div>
+                <div class="text-xs text-gray-400 mb-4">Vol: 1.1B USDT</div>
+
+                <!-- Chart Placeholder 2 -->
+                <div class="flex-1 bg-black/20 rounded relative overflow-hidden">
+                    <canvas id="chart-eth"></canvas>
+                </div>
+
+                <!-- Controls Asset 2 -->
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button onclick="openPosition('ETH', 'long')" class="bg-green-600 hover:bg-green-500 text-white py-2 rounded font-bold text-sm">BUY / LONG</button>
+                    <button onclick="openPosition('ETH', 'short')" class="bg-red-600 hover:bg-red-500 text-white py-2 rounded font-bold text-sm">SELL / SHORT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: POSITIONS & HISTORY -->
+        <div class="flex-1 flex flex-col bg-black">
+            <!-- Header -->
+            <div class="h-10 border-b border-dark flex items-center px-4 gap-6 text-sm font-medium bg-dark-2">
+                <button class="text-yellow-500 border-b-2 border-yellow-500 h-full">Posiciones Abiertas</button>
+                <button class="text-gray-400 hover:text-white">Historial de Órdenes</button>
+                <button class="text-gray-400 hover:text-white">Historial de Trades</button>
+            </div>
+
+            <!-- Table Header -->
+            <div class="grid grid-cols-7 text-xs text-gray-500 p-3 border-b border-dark bg-dark-2">
+                <div>Símbolo</div>
+                <div>Tipo</div>
+                <div>Tamaño</div>
+                <div>Precio Entrada</div>
+                <div>Precio Actual</div>
+                <div>PnL (USDT)</div>
+                <div class="text-right">Acción</div>
+            </div>
+
+            <!-- Positions List (Dynamic) -->
+            <div id="positions-list" class="flex-1 overflow-y-auto">
+                <!-- Las posiciones se inyectarán aquí con JS -->
+                <div class="p-8 text-center text-gray-600 text-sm">No hay posiciones abiertas.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GOD MODE PANEL (HIDDEN) -->
+    <div id="god-mode-panel" class="fixed bottom-0 left-0 right-0 bg-gray-800 border-t-4 border-yellow-600 p-6 z-50 shadow-2xl">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2"><i class="fa-solid fa-user-secret"></i> PANEL DE CONTROL DEL MAESTRO (MANIPULACIÓN)</h3>
+                <button onclick="toggleGodMode()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark fa-xl"></i></button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Control BTC -->
+                <div class="bg-gray-900 p-4 rounded border border-gray-700">
+                    <h4 class="font-bold text-yellow-500 mb-2">Manipular BTC</h4>
+                    <div class="flex gap-2 items-center mb-2">
+                        <label class="text-sm text-gray-400 w-24">Precio:</label>
+                        <input type="number" id="input-btc-price" class="bg-gray-800 text-white border border-gray-600 px-2 py-1 rounded w-full" value="45230.50">
+                        <button onclick="updatePrice('BTC')" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500">Set</button>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <label class="text-sm text-gray-400 w-24">Tendencia:</label>
+                        <button onclick="startTrend('BTC', 1)" class="bg-green-600/50 text-green-200 px-3 py-1 rounded hover:bg-green-600 text-xs">Subir Auto</button>
+                        <button onclick="startTrend('BTC', -1)" class="bg-red-600/50 text-red-200 px-3 py-1 rounded hover:bg-red-600 text-xs">Bajar Auto</button>
+                        <button onclick="stopTrend('BTC')" class="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-500 text-xs">Pausar</button>
+                    </div>
+                </div>
+
+                <!-- Control ETH -->
+                <div class="bg-gray-900 p-4 rounded border border-gray-700">
+                    <h4 class="font-bold text-blue-400 mb-2">Manipular ETH</h4>
+                    <div class="flex gap-2 items-center mb-2">
+                        <label class="text-sm text-gray-400 w-24">Precio:</label>
+                        <input type="number" id="input-eth-price" class="bg-gray-800 text-white border border-gray-600 px-2 py-1 rounded w-full" value="2450.80">
+                        <button onclick="updatePrice('ETH')" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-500">Set</button>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <label class="text-sm text-gray-400 w-24">Tendencia:</label>
+                        <button onclick="startTrend('ETH', 1)" class="bg-green-600/50 text-green-200 px-3 py-1 rounded hover:bg-green-600 text-xs">Subir Auto</button>
+                        <button onclick="startTrend('ETH', -1)" class="bg-red-600/50 text-red-200 px-3 py-1 rounded hover:bg-red-600 text-xs">Bajar Auto</button>
+                        <button onclick="stopTrend('ETH')" class="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-500 text-xs">Pausar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIC SCRIPT -->
+    <script>
+        // --- ESTADO DEL SISTEMA ---
+        let balance = 10000.00;
+        const assets = {
+            'BTC': { price: 45230.50, trend: 0, chart: null, data: [] },
+            'ETH': { price: 2450.80, trend: 0, chart: null, data: [] }
+        };
+        let positions = [];
+        let positionIdCounter = 1;
+
+        // --- INICIALIZACIÓN DE GRÁFICOS (CHART.JS) ---
+        function initCharts() {
+            const ctxBTC = document.getElementById('chart-btc').getContext('2d');
+            assets['BTC'].chart = createChart(ctxBTC, '#0ecb81');
+
+            const ctxETH = document.getElementById('chart-eth').getContext('2d');
+            assets['ETH'].chart = createChart(ctxETH, '#f6465d');
+
+            // Llenar con datos iniciales ficticios
+            for(let i=0; i<50; i++) {
+                updateChartData('BTC', assets['BTC'].price + (Math.random() - 0.5) * 50, false);
+                updateChartData('ETH', assets['ETH'].price + (Math.random() - 0.5) * 5, false);
+            }
+        }
+
+        function createChart(ctx, color) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: { labels: Array(50).fill(''), datasets: [{ data: [], borderColor: color, borderWidth: 2, pointRadius: 0, fill: false, tension: 0.1 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { display: false } },
+                    animation: { duration: 0 }
+                }
+            });
+        }
+
+        function updateChartData(asset, price, updateUI = true) {
+            const chart = assets[asset].chart;
+            const data = chart.data.datasets[0].data;
+            data.push(price);
+            if(data.length > 50) data.shift(); // Mantener ventana móvil
+            
+            // Color dinámico según tendencia inmediata
+            const prevPrice = data[data.length - 2] || price;
+            const color = price >= prevPrice ? '#0ecb81' : '#f6465d';
+            chart.data.datasets[0].borderColor = color;
+            
+            if(updateUI) chart.update();
+        }
+
+        // --- BUCLE DE SIMULACIÓN DE PRECIOS ---
+        setInterval(() => {
+            ['BTC', 'ETH'].forEach(asset => {
+                // Si hay tendencia forzada (God Mode), usarla. Si no, ruido aleatorio pequeño.
+                let change = (Math.random() - 0.5) * (assets[asset].price * 0.0005); // Volatilidad normal
+                
+                if (assets[asset].trend !== 0) {
+                    change = assets[asset].trend * (assets[asset].price * 0.001); // Volatilidad direccional fuerte
+                }
+
+                const newPrice = assets[asset].price + change;
+                setPrice(asset, newPrice);
+            });
+            updatePnL(); // Actualizar ganancias de posiciones en tiempo real
+        }, 1000); // Actualizar cada segundo
+
+        function setPrice(asset, price) {
+            const oldPrice = assets[asset].price;
+            assets[asset].price = price;
+            
+            // UI Update
+            const el = document.getElementById(`price-${asset.toLowerCase()}`);
+            el.innerText = price.toFixed(2);
+            el.className = `text-3xl font-mono font-bold mb-1 ${price >= oldPrice ? 'text-green price-up' : 'text-red price-down'}`;
+            
+            // Actualizar inputs del God Mode
+            const input = document.getElementById(`input-${asset.toLowerCase()}-price`);
+            if(document.activeElement !== input) input.value = price.toFixed(2);
+
+            // Chart Update
+            updateChartData(asset, price);
+        }
+
+        // --- LÓGICA DE TRADING ---
+        function openPosition(asset, type) {
+            const price = assets[asset].price;
+            const size = 1; // Simplificado: 1 unidad por trade (se puede mejorar)
+            
+            // Validar fondos (Simplificado para demo)
+            // if (balance < price * size) return alert("Fondos insuficientes");
+
+            const pos = {
+                id: positionIdCounter++,
+                asset: asset,
+                type: type, // 'long' or 'short'
+                entryPrice: price,
+                size: size,
+                timestamp: new Date()
+            };
+            positions.push(pos);
+            renderPositions();
+        }
+
+        function closePosition(id) {
+            const index = positions.findIndex(p => p.id === id);
+            if (index === -1) return;
+            
+            const pos = positions[index];
+            const currentPrice = assets[pos.asset].price;
+            const pnl = calculatePnL(pos, currentPrice);
+            
+            balance += pnl;
+            document.getElementById('wallet-balance').innerText = balance.toLocaleString('en-US', {minimumFractionDigits: 2});
+            
+            positions.splice(index, 1);
+            renderPositions();
+        }
+
+        function calculatePnL(pos, currentPrice) {
+            if (pos.type === 'long') {
+                return (currentPrice - pos.entryPrice) * pos.size;
+            } else {
+                return (pos.entryPrice - currentPrice) * pos.size;
+            }
+        }
+
+        function updatePnL() {
+            positions.forEach(pos => {
+                const currentPrice = assets[pos.asset].price;
+                const pnl = calculatePnL(pos, currentPrice);
+                const el = document.getElementById(`pnl-${pos.id}`);
+                if (el) {
+                    el.innerText = pnl.toFixed(2);
+                    el.className = pnl >= 0 ? 'text-green font-bold' : 'text-red font-bold';
+                }
+            });
+        }
+
+        function renderPositions() {
+            const container = document.getElementById('positions-list');
+            if (positions.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-gray-600 text-sm">No hay posiciones abiertas.</div>';
+                return;
+            }
+
+            let html = '';
+            positions.forEach(pos => {
+                const currentPrice = assets[pos.asset].price;
+                const pnl = calculatePnL(pos, currentPrice);
+                const typeClass = pos.type === 'long' ? 'text-green' : 'text-red';
+                const pnlClass = pnl >= 0 ? 'text-green' : 'text-red';
+
+                html += `
+                    <div class="grid grid-cols-7 text-sm p-3 border-b border-dark hover:bg-dark-2 items-center font-mono">
+                        <div class="font-bold flex items-center gap-2">
+                            <span class="${pos.asset === 'BTC' ? 'text-yellow-500' : 'text-blue-400'}">●</span> ${pos.asset}USDT
+                        </div>
+                        <div class="${typeClass} uppercase font-bold">${pos.type}</div>
+                        <div>${pos.size}</div>
+                        <div>${pos.entryPrice.toFixed(2)}</div>
+                        <div id="price-live-${pos.id}">${currentPrice.toFixed(2)}</div>
+                        <div id="pnl-${pos.id}" class="${pnlClass} font-bold">${pnl.toFixed(2)}</div>
+                        <div class="text-right">
+                            <button onclick="closePosition(${pos.id})" class="text-xs bg-dark-2 border border-gray-600 hover:bg-gray-700 px-2 py-1 rounded text-white transition">Cerrar</button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // --- GOD MODE (MANIPULACIÓN) ---
+        function toggleGodMode() {
+            document.getElementById('god-mode-panel').classList.toggle('active');
+        }
+
+        function updatePrice(asset) {
+            const input = document.getElementById(`input-${asset.toLowerCase()}-price`);
+            const newPrice = parseFloat(input.value);
+            if (!isNaN(newPrice)) {
+                setPrice(asset, newPrice);
+                // Detener tendencias automáticas si se fija manual
+                stopTrend(asset); 
+            }
+        }
+
+        function startTrend(asset, direction) {
+            // direction: 1 (Subir), -1 (Bajar)
+            assets[asset].trend = direction;
+        }
+
+        function stopTrend(asset) {
+            assets[asset].trend = 0;
+        }
+
+        // Iniciar
+        initCharts();
+    </script>
+</body>
+</html>
