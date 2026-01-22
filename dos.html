@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invictus Scalping | High Frequency Trading</title>
+    <title>Invictus Scalping | Trading en Vivo</title>
     
     <!-- Librerías -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -20,25 +20,47 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Manrope', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+                    colors: {
+                        dark: { 900: '#0b0e11', 800: '#151a21', 700: '#2a2e39' },
+                        brand: { gold: '#f0b90b', green: '#0ecb81', red: '#f6465d' }
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 5px rgba(240, 185, 11, 0.2)' },
+                            '50%': { boxShadow: '0 0 20px rgba(240, 185, 11, 0.6)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { background-color: #0b0e11; color: #eaecef; font-family: 'Segoe UI', sans-serif; }
-        .text-green { color: #0ecb81; }
-        .text-red { color: #f6465d; }
-        .bg-dark-2 { background-color: #1e2329; }
-        .border-dark { border-color: #2b3139; }
-        .btn-trade { transition: all 0.2s; }
-        .btn-trade:active { transform: scale(0.98); }
-        .animate-pulse-green { animation: pulseGreen 2s infinite; }
-        @keyframes pulseGreen { 0% { box-shadow: 0 0 0 0 rgba(14, 203, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(14, 203, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(14, 203, 129, 0); } }
+        body { background-color: #0b0e11; color: #eab308; }
+        .glass-panel { background: #151a21; border: 1px solid #2a2e39; }
+        /* Scrollbar oscura */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0e11; }
+        ::-webkit-scrollbar-thumb { background: #2a2e39; border-radius: 3px; }
     </style>
 </head>
-<body class="h-screen overflow-hidden flex flex-col">
-    <div id="root" class="h-full flex flex-col"></div>
+<body class="text-gray-100 h-screen overflow-hidden font-sans">
+    <div id="root" class="h-full"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // --- CONFIGURACIÓN FIREBASE (SOBERANO: PEGAR LLAVES AQUÍ) ---
+        // --- CONFIGURACIÓN FIREBASE ---
+        // SOBERANO: Estas llaves deben ser las de su proyecto "Scalping"
         const firebaseConfig = {
             apiKey: "AIzaSyDrp6Dx5gADsFsQpEE5E5buXXEAqu9-YdA", 
             authDomain: "scalping-f433d.firebaseapp.com",
@@ -48,13 +70,14 @@
             appId: "1:1055317099279:web:48ee6331b8e73d3325747a"
         };
 
-        let isFirebaseActive = false;
         let db = null;
-        if (firebaseConfig.apiKey !== "PON_TU_API_KEY_AQUI") {
+        try {
             if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
-            isFirebaseActive = true;
-        }
+        } catch(e) { console.error("Error Firebase:", e); }
+
+        // --- PRECIOS INICIALES ---
+        const INITIAL_PRICES = { 'BTC': 64230.50, 'ETH': 3450.80, 'SOL': 145.20, 'DOGE': 0.12 };
 
         // --- COMPONENTES ---
 
@@ -68,30 +91,34 @@
                 e.preventDefault();
                 setLoading(true);
                 try {
-                    if (isFirebaseActive) {
-                        const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
-                        onLoginSuccess(userCredential.user);
-                    } else {
-                        setTimeout(() => {
-                            if(email.length > 3) onLoginSuccess({ email, uid: "sim-uid" });
-                            else { setError("Credenciales inválidas (Modo Demo)"); setLoading(false); }
-                        }, 1000);
-                    }
+                    const userCredential = await firebase.auth().signInWithEmailAndPassword(email, password);
+                    onLoginSuccess(userCredential.user);
                 } catch (err) {
-                    setError("Error de acceso.");
+                    setError("Acceso denegado. Verifique credenciales.");
                     setLoading(false);
                 }
             };
 
             return (
-                <div className="flex-1 flex items-center justify-center bg-black">
-                    <div className="bg-dark-2 p-8 rounded-xl border border-dark w-96">
-                        <h1 className="text-2xl font-bold text-yellow-500 mb-6 text-center"><i className="ph ph-lightning"></i> INVICTUS SCALPING</h1>
-                        <form onSubmit={handleLogin} className="space-y-4">
-                            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full bg-black border border-dark p-3 rounded text-white focus:border-yellow-500 outline-none" placeholder="Email" />
-                            <input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full bg-black border border-dark p-3 rounded text-white focus:border-yellow-500 outline-none" placeholder="Password" />
-                            {error && <div className="text-red text-xs">{error}</div>}
-                            <button className="w-full bg-yellow-500 text-black font-bold py-3 rounded hover:bg-yellow-400 transition">{loading ? "Conectando..." : "Entrar al Mercado"}</button>
+                <div className="min-h-screen flex items-center justify-center bg-dark-900 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+                    <div className="bg-dark-800 p-10 rounded-2xl shadow-2xl w-full max-w-md border border-dark-700 relative z-10">
+                        <div className="text-center mb-8">
+                            <i className="ph ph-lightning text-5xl text-brand-gold mb-2"></i>
+                            <h1 className="text-3xl font-bold text-white tracking-tight">INVICTUS</h1>
+                            <p className="text-gray-500 text-sm uppercase tracking-widest">Scalping Terminal</p>
+                        </div>
+                        <form onSubmit={handleLogin} className="space-y-6">
+                            <div>
+                                <input type="email" value={email} onChange={e=>setEmail(e.target.value)} className="w-full bg-dark-900 border border-dark-700 rounded-lg p-4 text-white focus:border-brand-gold outline-none transition" placeholder="Trader ID (Email)" />
+                            </div>
+                            <div>
+                                <input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full bg-dark-900 border border-dark-700 rounded-lg p-4 text-white focus:border-brand-gold outline-none transition" placeholder="Clave de Acceso" />
+                            </div>
+                            {error && <div className="text-brand-red text-xs text-center font-bold">{error}</div>}
+                            <button disabled={loading} className="w-full py-4 bg-brand-gold text-dark-900 font-bold rounded-lg hover:bg-yellow-400 transition shadow-lg shadow-yellow-900/20 uppercase tracking-wide">
+                                {loading ? "Autenticando..." : "Iniciar Sesión"}
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -99,266 +126,302 @@
         };
 
         const TradingDashboard = ({ user, onLogout }) => {
-            // Estado del Mercado (Simulado)
-            const [btcPrice, setBtcPrice] = useState(45000);
-            const [ethPrice, setEthPrice] = useState(2400);
-            const [basketPrice, setBasketPrice] = useState(0); // Precio del par combinado
-            
-            // Estado del Usuario
-            const [balance, setBalance] = useState(10000); // Saldo Demo Inicial
-            const [trades, setTrades] = useState([]); // Historial
-            const [activeTrade, setActiveTrade] = useState(null); // Solo 1 trade activo a la vez por simplicidad
-            const [timeLeft, setTimeLeft] = useState(0); // Temporizador 5 min
-
-            // Configuración del Trade
+            const [balance, setBalance] = useState(0);
+            const [view, setView] = useState('trading'); 
+            const [selectedAsset, setSelectedAsset] = useState('BTC');
+            const [currentPrice, setCurrentPrice] = useState(INITIAL_PRICES['BTC']);
             const [tradeAmount, setTradeAmount] = useState(100);
-
-            // Chart Reference
+            const [activeTrade, setActiveTrade] = useState(null);
+            const [timeLeft, setTimeLeft] = useState(0);
+            const [history, setHistory] = useState([]);
             const chartRef = useRef(null);
             const chartInstance = useRef(null);
 
-            // --- SIMULACIÓN DE PRECIOS EN TIEMPO REAL ---
+            // 1. CARGAR DATOS DEL USUARIO (PERSISTENCIA)
             useEffect(() => {
-                const interval = setInterval(() => {
-                    // Movimiento aleatorio
-                    const btcMove = (Math.random() - 0.5) * 50;
-                    const ethMove = (Math.random() - 0.5) * 5;
-                    
-                    setBtcPrice(prev => prev + btcMove);
-                    setEthPrice(prev => prev + ethMove);
-                    
-                    // Precio de la "Canasta" (Basket) = Promedio ponderado o suma simple para demo
-                    // Digamos que la canasta es 1 BTC + 10 ETH para normalizar precios
-                    const newBasket = (btcPrice + (ethPrice * 10)) / 2;
-                    setBasketPrice(newBasket);
-
-                    // Actualizar gráfico
-                    if(chartInstance.current) {
-                        const chart = chartInstance.current;
-                        chart.data.labels.push('');
-                        chart.data.datasets[0].data.push(newBasket);
-                        if(chart.data.datasets[0].data.length > 50) {
-                            chart.data.labels.shift();
-                            chart.data.datasets[0].data.shift();
-                        }
-                        chart.update('none'); // Update sin animación para rendimiento
+                if(!user || !db) return;
+                
+                // Suscripción en tiempo real al saldo
+                const unsubscribe = db.collection('users').doc(user.uid).onSnapshot(doc => {
+                    if (doc.exists) {
+                        setBalance(doc.data().balance || 0);
+                    } else {
+                        // Crear usuario si no existe (Bono de bienvenida opcional)
+                        db.collection('users').doc(user.uid).set({
+                            email: user.email,
+                            balance: 1000.00, // Bono inicial para pruebas
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
                     }
+                });
 
-                    // Chequear Trade Activo
-                    if(activeTrade && timeLeft > 0) {
-                        setTimeLeft(prev => prev - 1);
-                    } else if (activeTrade && timeLeft <= 0) {
-                        closeTrade(newBasket);
-                    }
+                // Cargar historial
+                db.collection('users').doc(user.uid).collection('trades')
+                  .orderBy('timestamp', 'desc')
+                  .limit(20)
+                  .onSnapshot(snapshot => {
+                      setHistory(snapshot.docs.map(d => d.data()));
+                  });
 
-                }, 1000);
-                return () => clearInterval(interval);
-            }, [activeTrade, timeLeft, btcPrice, ethPrice]);
+                return () => unsubscribe();
+            }, [user]);
 
-            // --- INICIAR GRÁFICO ---
+            // 2. MOTOR DE PRECIOS Y GRÁFICO
             useEffect(() => {
-                if(chartRef.current) {
+                // Inicializar Chart
+                if (chartRef.current && !chartInstance.current) {
                     const ctx = chartRef.current.getContext('2d');
                     chartInstance.current = new Chart(ctx, {
                         type: 'line',
                         data: {
                             labels: Array(50).fill(''),
                             datasets: [{
-                                label: 'Basket BTC+ETH',
                                 data: Array(50).fill(null),
-                                borderColor: '#0ecb81',
+                                borderColor: '#f0b90b',
+                                backgroundColor: (context) => {
+                                    const ctx = context.chart.ctx;
+                                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                                    gradient.addColorStop(0, 'rgba(240, 185, 11, 0.2)');
+                                    gradient.addColorStop(1, 'rgba(240, 185, 11, 0)');
+                                    return gradient;
+                                },
                                 borderWidth: 2,
                                 pointRadius: 0,
-                                tension: 0.1
+                                fill: true,
+                                tension: 0.4
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
                             plugins: { legend: { display: false } },
-                            scales: { x: { display: false }, y: { display: false } },
-                            animation: false
+                            scales: { x: { display: false }, y: { position: 'right', grid: { color: '#2a2e39' }, ticks: { color: '#6b7280' } } },
+                            animation: false,
+                            interaction: { intersect: false, mode: 'index' }
                         }
                     });
                 }
-            }, []);
 
-            // --- LÓGICA DE TRADING ---
-            const openTrade = (direction) => {
-                if(balance < tradeAmount) return alert("Saldo insuficiente");
-                if(activeTrade) return alert("Ya tienes una operación en curso. Espera a que termine.");
+                const interval = setInterval(() => {
+                    // Simulación de Mercado
+                    const volatility = selectedAsset === 'BTC' ? 30 : 2;
+                    const move = (Math.random() - 0.5) * volatility;
+                    const newPrice = Math.max(0.01, currentPrice + move);
+                    setCurrentPrice(newPrice);
 
-                // Descontar saldo
+                    // Actualizar Gráfico
+                    if (chartInstance.current) {
+                        const chart = chartInstance.current;
+                        chart.data.datasets[0].data.push(newPrice);
+                        if (chart.data.datasets[0].data.length > 50) chart.data.datasets[0].data.shift();
+                        
+                        // Color Dinámico
+                        const prev = chart.data.datasets[0].data[48] || newPrice;
+                        const color = newPrice >= prev ? '#0ecb81' : '#f6465d';
+                        chart.data.datasets[0].borderColor = color;
+                        chart.update('none');
+                    }
+
+                    // Lógica de Trade (Temporizador)
+                    if (activeTrade) {
+                        if (timeLeft > 0) {
+                            setTimeLeft(prev => prev - 1);
+                        } else {
+                            closeTrade(newPrice);
+                        }
+                    }
+                }, 1000);
+
+                return () => clearInterval(interval);
+            }, [selectedAsset, currentPrice, activeTrade, timeLeft]);
+
+            // 3. OPERACIONES FINANCIERAS
+            const openTrade = async (direction) => {
+                if (balance < tradeAmount) return alert("Saldo insuficiente.");
+                if (activeTrade) return alert("Operación en curso.");
+
+                // Optimistic Update (Visual)
                 setBalance(prev => prev - tradeAmount);
 
                 const trade = {
-                    id: Date.now(),
-                    direction: direction, // 'UP' or 'DOWN'
-                    entryPrice: basketPrice,
+                    asset: selectedAsset,
+                    direction,
+                    entryPrice: currentPrice,
                     amount: tradeAmount,
-                    startTime: new Date()
+                    startTime: new Date().toISOString()
                 };
-                
+
                 setActiveTrade(trade);
-                setTimeLeft(300); // 300 segundos = 5 minutos
+                setTimeLeft(300); // 5 minutos (300s)
+
+                // Guardar estado inicial en DB (Opcional, para seguridad avanzada se hace en backend)
+                // Aquí confiamos en el cliente para el MVP, pero descontamos saldo en cierre o inicio.
+                // Estrategia: Descontar saldo YA en Firestore.
+                await db.collection('users').doc(user.uid).update({
+                    balance: firebase.firestore.FieldValue.increment(-tradeAmount)
+                });
             };
 
-            const closeTrade = (currentPrice) => {
-                if(!activeTrade) return;
+            const closeTrade = async (exitPrice) => {
+                if (!activeTrade) return;
 
                 let win = false;
-                if(activeTrade.direction === 'UP' && currentPrice > activeTrade.entryPrice) win = true;
-                if(activeTrade.direction === 'DOWN' && currentPrice < activeTrade.entryPrice) win = true;
+                if (activeTrade.direction === 'UP' && exitPrice > activeTrade.entryPrice) win = true;
+                if (activeTrade.direction === 'DOWN' && exitPrice < activeTrade.entryPrice) win = true;
 
                 let payout = 0;
-                if(win) {
-                    payout = activeTrade.amount * 1.8; // Retorno del 80%
-                    setBalance(prev => prev + payout);
-                    // Aquí guardaríamos en Firebase que el usuario ganó
-                } 
-                // Si pierde, payout es 0, el dinero ya se descontó al inicio.
+                let message = "Operación Perdida";
 
-                // Guardar en historial
-                const closedTrade = {
+                if (win) {
+                    payout = activeTrade.amount * 1.85; // 85% Profit
+                    message = `¡GANASTE! +$${(payout - activeTrade.amount).toFixed(2)}`;
+                    
+                    // Actualizar saldo en Bóveda
+                    await db.collection('users').doc(user.uid).update({
+                        balance: firebase.firestore.FieldValue.increment(payout)
+                    });
+                }
+
+                // Guardar en Historial Permanente
+                await db.collection('users').doc(user.uid).collection('trades').add({
                     ...activeTrade,
-                    exitPrice: currentPrice,
+                    exitPrice,
                     result: win ? 'WIN' : 'LOSS',
-                    payout: payout
-                };
+                    payout,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
 
-                setTrades(prev => [closedTrade, ...prev]);
                 setActiveTrade(null);
-                setTimeLeft(0);
-                
-                // Efecto visual
-                if(win) alert(`¡GANASTE! +$${payout - activeTrade.amount}`);
-                else alert("Operación perdida.");
+                alert(message);
             };
 
-            const formatTime = (seconds) => {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-            };
+            const formatTime = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
 
             return (
-                <div className="flex h-screen flex-col">
+                <div className="flex flex-col h-screen bg-dark-900">
                     {/* Header */}
-                    <header className="h-16 bg-dark-2 border-b border-dark flex items-center justify-between px-6">
+                    <header className="h-16 bg-dark-800 border-b border-dark-700 flex items-center justify-between px-6 z-20">
                         <div className="flex items-center gap-4">
-                            <div className="text-yellow-500 font-bold text-xl"><i className="ph ph-lightning"></i> INVICTUS</div>
-                            <div className="h-6 w-px bg-gray-700"></div>
-                            <div className="flex gap-4 text-sm text-gray-300">
-                                <div className="flex items-center gap-2"><i className="ph ph-currency-btc text-yellow-500"></i> {btcPrice.toFixed(2)}</div>
-                                <div className="flex items-center gap-2"><i className="ph ph-currency-eth text-purple-500"></i> {ethPrice.toFixed(2)}</div>
+                            <div className="text-brand-gold font-bold text-xl flex items-center gap-2">
+                                <i className="ph ph-lightning-fill"></i> INVICTUS
+                            </div>
+                            <div className="h-6 w-px bg-dark-700 hidden md:block"></div>
+                            <div className="hidden md:flex gap-4 text-sm text-gray-400">
+                                <span className={selectedAsset === 'BTC' ? 'text-white' : ''}>BTC</span>
+                                <span className={selectedAsset === 'ETH' ? 'text-white' : ''}>ETH</span>
+                                <span className={selectedAsset === 'SOL' ? 'text-white' : ''}>SOL</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-6">
                             <div className="text-right">
-                                <p className="text-xs text-gray-400">Saldo Cuenta</p>
-                                <p className="text-lg font-bold text-white font-mono">${balance.toFixed(2)}</p>
+                                <p className="text-[10px] text-gray-500 uppercase font-bold">Saldo Real</p>
+                                <p className="text-lg font-mono font-bold text-white">${balance.toFixed(2)}</p>
                             </div>
-                            <button onClick={onLogout} className="text-gray-500 hover:text-white"><i className="ph ph-sign-out text-xl"></i></button>
+                            <button onClick={onLogout} className="text-gray-500 hover:text-white transition"><i className="ph ph-sign-out text-xl"></i></button>
                         </div>
                     </header>
 
-                    {/* Main Area */}
+                    {/* Main Content */}
                     <div className="flex-1 flex overflow-hidden">
                         
-                        {/* LEFT: CHART */}
-                        <div className="flex-1 bg-black relative p-4 flex flex-col">
-                            {/* Asset Info Overlay */}
-                            <div className="absolute top-4 left-4 z-10">
-                                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                    CRYPTO BASKET (BTC+ETH) 
-                                    <span className="text-xs bg-gray-700 px-2 py-1 rounded text-gray-300 font-normal">5 MIN SCALPING</span>
-                                </h2>
-                                <p className={`text-4xl font-mono font-bold mt-2 ${basketPrice > (activeTrade?.entryPrice || 0) ? 'text-green' : 'text-white'}`}>
-                                    {basketPrice.toFixed(2)}
-                                </p>
+                        {/* CHART AREA */}
+                        <div className="flex-1 flex flex-col relative bg-dark-900">
+                            {/* Asset Selector Overlay */}
+                            <div className="absolute top-4 left-4 z-10 flex gap-2">
+                                {['BTC', 'ETH', 'SOL', 'DOGE'].map(a => (
+                                    <button 
+                                        key={a}
+                                        onClick={() => !activeTrade && setSelectedAsset(a)}
+                                        className={`px-3 py-1 rounded text-xs font-bold transition ${selectedAsset === a ? 'bg-brand-gold text-black' : 'bg-dark-700 text-gray-400 hover:bg-dark-600'}`}
+                                        disabled={activeTrade}
+                                    >
+                                        {a}USD
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            {/* Price Overlay */}
+                            <div className="absolute top-4 right-4 z-10 text-right">
+                                <h2 className="text-4xl font-mono font-bold text-white tracking-tighter">${currentPrice.toFixed(2)}</h2>
+                                <p className="text-xs text-gray-500 uppercase">Precio de Mercado en Vivo</p>
                             </div>
 
-                            <div className="flex-1 relative w-full h-full">
+                            <div className="flex-1 p-4 pt-16">
                                 <canvas ref={chartRef}></canvas>
                             </div>
                         </div>
 
-                        {/* RIGHT: CONTROLS */}
-                        <div className="w-80 bg-dark-2 border-l border-dark flex flex-col">
-                            
-                            {/* Trade Panel */}
-                            <div className="p-6 border-b border-dark">
+                        {/* RIGHT PANEL */}
+                        <div className="w-80 bg-dark-800 border-l border-dark-700 flex flex-col z-10">
+                            {/* Trading Controls */}
+                            <div className="p-6 border-b border-dark-700">
                                 <div className="mb-6">
-                                    <label className="text-xs text-gray-400 uppercase font-bold block mb-2">Importe (USDT)</label>
-                                    <div className="flex items-center bg-black border border-dark rounded">
-                                        <button onClick={()=>setTradeAmount(Math.max(10, tradeAmount-10))} className="px-3 py-2 text-gray-400 hover:text-white">-</button>
-                                        <input type="number" value={tradeAmount} onChange={e=>setTradeAmount(Number(e.target.value))} className="w-full bg-transparent text-center text-white font-bold outline-none appearance-none" />
-                                        <button onClick={()=>setTradeAmount(tradeAmount+10)} className="px-3 py-2 text-gray-400 hover:text-white">+</button>
+                                    <label className="text-xs text-gray-500 uppercase font-bold mb-2 block">Inversión (USDT)</label>
+                                    <div className="flex items-center bg-dark-900 rounded-lg border border-dark-700 p-1">
+                                        <button onClick={()=>setTradeAmount(Math.max(10, tradeAmount-10))} className="w-10 h-10 text-gray-400 hover:text-white font-bold text-xl">-</button>
+                                        <input type="number" value={tradeAmount} onChange={e=>setTradeAmount(Number(e.target.value))} className="flex-1 bg-transparent text-center text-white font-bold outline-none font-mono" />
+                                        <button onClick={()=>setTradeAmount(tradeAmount+10)} className="w-10 h-10 text-gray-400 hover:text-white font-bold text-xl">+</button>
                                     </div>
-                                    <div className="flex justify-between mt-2">
-                                        <button onClick={()=>setTradeAmount(50)} className="text-xs bg-gray-800 px-2 py-1 rounded hover:bg-gray-700 text-gray-300">$50</button>
-                                        <button onClick={()=>setTradeAmount(100)} className="text-xs bg-gray-800 px-2 py-1 rounded hover:bg-gray-700 text-gray-300">$100</button>
-                                        <button onClick={()=>setTradeAmount(500)} className="text-xs bg-gray-800 px-2 py-1 rounded hover:bg-gray-700 text-gray-300">$500</button>
+                                    <div className="flex justify-between mt-2 gap-2">
+                                        {[50, 100, 500].map(amt => (
+                                            <button key={amt} onClick={()=>setTradeAmount(amt)} className="flex-1 bg-dark-700 hover:bg-dark-600 text-gray-300 text-xs py-1 rounded transition">${amt}</button>
+                                        ))}
                                     </div>
                                 </div>
 
-                                <div className="mb-6">
-                                    <div className="flex justify-between text-sm mb-1">
-                                        <span className="text-gray-400">Beneficio (80%)</span>
-                                        <span className="text-green font-bold">+${(tradeAmount * 0.8).toFixed(2)}</span>
+                                <div className="bg-dark-900 p-4 rounded-lg mb-6 border border-dark-700">
+                                    <div className="flex justify-between text-sm mb-2">
+                                        <span className="text-gray-500">Retorno (85%)</span>
+                                        <span className="text-brand-green font-bold font-mono">+${(tradeAmount * 0.85).toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span className="text-gray-400">Tiempo</span>
-                                        <span className="text-white font-bold">05:00</span>
+                                        <span className="text-gray-500">Tiempo</span>
+                                        <span className="text-white font-bold">5 Minutos</span>
                                     </div>
                                 </div>
 
                                 {!activeTrade ? (
-                                    <div className="space-y-3">
-                                        <button onClick={()=>openTrade('UP')} className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded text-lg btn-trade shadow-lg shadow-green-900/20 flex justify-between px-6 items-center">
-                                            <span>SUBE</span>
-                                            <i className="ph ph-arrow-up-right text-2xl"></i>
+                                    <div className="grid gap-3">
+                                        <button onClick={()=>openTrade('UP')} className="bg-brand-green hover:bg-green-400 text-dark-900 font-bold py-4 rounded-lg text-lg flex items-center justify-between px-6 transition transform active:scale-95 shadow-lg shadow-green-900/20">
+                                            <span>ALZA</span>
+                                            <i className="ph ph-trend-up text-2xl"></i>
                                         </button>
-                                        <button onClick={()=>openTrade('DOWN')} className="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-4 rounded text-lg btn-trade shadow-lg shadow-red-900/20 flex justify-between px-6 items-center">
+                                        <button onClick={()=>openTrade('DOWN')} className="bg-brand-red hover:bg-red-400 text-white font-bold py-4 rounded-lg text-lg flex items-center justify-between px-6 transition transform active:scale-95 shadow-lg shadow-red-900/20">
                                             <span>BAJA</span>
-                                            <i className="ph ph-arrow-down-right text-2xl"></i>
+                                            <i className="ph ph-trend-down text-2xl"></i>
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="bg-gray-800 rounded p-4 border border-gray-700 animate-pulse-green">
-                                        <div className="text-center mb-2 text-xs text-gray-400 uppercase tracking-widest">Operación en Curso</div>
-                                        <div className="text-4xl font-mono font-bold text-white text-center mb-2">{formatTime(timeLeft)}</div>
-                                        <div className={`text-center font-bold ${basketPrice > activeTrade.entryPrice ? (activeTrade.direction === 'UP' ? 'text-green' : 'text-red') : (activeTrade.direction === 'DOWN' ? 'text-green' : 'text-red')}`}>
+                                    <div className="text-center py-4 bg-dark-900 rounded-xl border border-brand-gold animate-pulse-glow">
+                                        <p className="text-brand-gold text-xs font-bold uppercase mb-2">Operación Activa</p>
+                                        <div className="text-4xl font-mono font-bold text-white mb-2">{formatTime(timeLeft)}</div>
+                                        <div className={`text-sm font-bold ${currentPrice > activeTrade.entryPrice ? (activeTrade.direction === 'UP' ? 'text-brand-green' : 'text-brand-red') : (activeTrade.direction === 'DOWN' ? 'text-brand-green' : 'text-brand-red')}`}>
                                             {activeTrade.direction === 'UP' ? 'COMPRA' : 'VENTA'} @ {activeTrade.entryPrice.toFixed(2)}
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* History */}
+                            {/* History List */}
                             <div className="flex-1 overflow-y-auto p-4">
-                                <h3 className="text-xs text-gray-500 font-bold uppercase mb-3">Historial Reciente</h3>
+                                <h3 className="text-xs text-gray-500 uppercase font-bold mb-4 sticky top-0 bg-dark-800 py-2">Últimas Operaciones</h3>
                                 <div className="space-y-2">
-                                    {trades.map(trade => (
-                                        <div key={trade.id} className="bg-black p-3 rounded border border-dark flex justify-between items-center text-sm">
+                                    {history.map((t, i) => (
+                                        <div key={i} className="bg-dark-900 p-3 rounded border border-dark-700 flex justify-between items-center text-sm">
                                             <div>
-                                                <div className={`font-bold ${trade.direction === 'UP' ? 'text-green' : 'text-red'}`}>
-                                                    {trade.direction === 'UP' ? 'SUBE' : 'BAJA'}
+                                                <div className="font-bold text-white flex items-center gap-2">
+                                                    {t.asset} <span className={`text-[10px] px-1 rounded ${t.direction === 'UP' ? 'bg-brand-green text-dark-900' : 'bg-brand-red text-white'}`}>{t.direction === 'UP' ? 'LONG' : 'SHORT'}</span>
                                                 </div>
-                                                <div className="text-xs text-gray-500">Entrada: {trade.entryPrice.toFixed(2)}</div>
+                                                <div className="text-xs text-gray-500 font-mono">{new Date(t.timestamp?.seconds * 1000).toLocaleTimeString()}</div>
                                             </div>
-                                            <div className="text-right">
-                                                <div className={`font-bold ${trade.result === 'WIN' ? 'text-green' : 'text-red'}`}>
-                                                    {trade.result === 'WIN' ? `+$${(trade.payout - trade.amount).toFixed(2)}` : `-$${trade.amount}`}
-                                                </div>
-                                                <div className="text-xs text-gray-500">{trade.result}</div>
+                                            <div className={`font-bold font-mono ${t.result === 'WIN' ? 'text-brand-green' : 'text-brand-red'}`}>
+                                                {t.result === 'WIN' ? `+$${(t.payout - t.amount).toFixed(2)}` : `-$${t.amount}`}
                                             </div>
                                         </div>
                                     ))}
-                                    {trades.length === 0 && <div className="text-center text-xs text-gray-600 py-4">Sin operaciones hoy</div>}
+                                    {history.length === 0 && <div className="text-center text-gray-600 text-xs py-4">Sin historial</div>}
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -367,18 +430,10 @@
 
         const App = () => {
             const [user, setUser] = useState(null);
-            
             useEffect(() => {
-                if(isFirebaseActive) {
-                    firebase.auth().onAuthStateChanged(u => setUser(u || null));
-                }
+                if(db) firebase.auth().onAuthStateChanged(setUser);
             }, []);
-
-            return (
-                <React.Fragment>
-                    {!user ? <LoginScreen onLoginSuccess={setUser} /> : <TradingDashboard user={user} onLogout={() => firebase.auth().signOut()} />}
-                </React.Fragment>
-            );
+            return user ? <TradingDashboard user={user} onLogout={()=>firebase.auth().signOut()} /> : <LoginScreen onLoginSuccess={setUser} />;
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
